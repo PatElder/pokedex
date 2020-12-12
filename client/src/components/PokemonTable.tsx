@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { http } from '../util/util'
+import { PokeObj } from '../util/pokeInterface'
 
 export function PokemonTable() {
   const [pokemon, setPokemon] = useState([])
@@ -37,6 +38,11 @@ export function PokemonTable() {
             <tr>
               {headers.map((el: string, i: number) => (
                 <th key={i}>{el}</th>
+              ))}
+            </tr>
+            <tr>
+              {Object.keys(pokemon).map((el: any, i: number) => (
+                <td key={i}>{pokemon[el]}</td>
               ))}
             </tr>
           </tbody>
