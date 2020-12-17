@@ -1,31 +1,29 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState } from 'react'
 import { http } from '../util/util'
 import { PokeObj } from '../util/pokeInterface'
-import { TextField } from '@rmwc/textfield'
-import '@rmwc/textfield/styles'
 
 export function PokemonTable() {
   const [pokemon, setPokemon] = useState([])
-  const [pagination, setPagination] = useState(10)
   const [headers, setHeaders]: any = useState([])
   const [page, setPage]: any = useState([])
+  const [pagination, setPagination] = useState(10)
+  const [firstRender, setFirstRender] = useState(true)
 
-  const maxPokemon = useRef(0)
-  const changeTableQty = useCallback(
-    (e: number) => {
-      const tempPage = []
-      setPagination(e)
-
-      for (let i = 0; i < pokemon.length; i += pagination) {
-        tempPage.push(pokemon.slice(i, i + pagination))
-      }
-
-      setPage(tempPage)
-
-      return tempPage
-    },
-    [pagination, pokemon],
-  )
+  const setPages = (array: string[]) => {
+    const tempArray = []
+    const paginationBoxValue = +(document.getElementById(
+      'paginationInput',
+    ) as HTMLInputElement).value
+    console.log(pagination, +paginationBoxValue)
+    if (!!+paginationBoxValue) {
+      setPagination(paginationBoxValue)
+      tempArray.push(array.slice(0, pagination))
+    } else {
+      tempArray.push(array.slice(0, pagination))
+      console.log(tempArray[0])
+    }
+    setPage(tempArray[0])
+  }
 
   useEffect(() => {
     const tempHeaders: string[] = []
@@ -33,24 +31,24 @@ export function PokemonTable() {
       .then((response: any) => {
         // avoidable any with an interface
         setPokemon(response)
-        maxPokemon.current = response.length
-        changeTableQty(pagination)
         Object.keys(response[0]).map((key) =>
           key !== 'base'
             ? tempHeaders.push(key)
             : Object.keys(response[0][key]).map((subKey) => {
-                console.log(key, subKey)
                 tempHeaders.push(subKey)
                 return tempHeaders
               }),
         )
-        if (headers.length === 0) {
-          setHeaders(tempHeaders)
-        }
+        setHeaders(tempHeaders)
         return response
       })
       .catch((error) => error)
-  }, [headers, pagination, changeTableQty])
+  }, [])
+
+  if (pokemon.length > 0 && firstRender) {
+    setFirstRender(false)
+    setPages(pokemon)
+  }
 
   return (
     <div>
@@ -58,41 +56,41 @@ export function PokemonTable() {
         <table>
           <tbody>
             <tr>
-              {headers.map((el: string, i: number) => (
-                <th key={i}>{el}</th>
+              {headers.map((el: string) => (
+                <th key={el}>{el}</th>
               ))}
             </tr>
+
             {page.length > 0
-              ? pokemon.map((el: PokeObj, i: number) => (
-                  <tr>
-                    <td key={i + '_' + el.id}>{el.id}</td>
-                    <td key={i + '_' + el.name.english}>{el.name.english}</td>
-                    <td>
+              ? page.map((el: PokeObj, i: number) => (
+                  <tr key={el.name.japanese}>
+                    <td key={el.id}>{el.id}</td>
+
+                    <td key={el.name.english}>{el.name.english}</td>
+                    <td key={el.type[0] + '_' + i}>
                       {el.type.map((type) => (
                         <p>
-                          {type}
-                          <br />
+                          {type} <br />
                         </p>
                       ))}
                     </td>
                     {Object.entries(el.base).map((base, entry) => (
-                      <td key={base[1] + entry + i}>{base[1]}</td>
+                      <td key={base[1] + entry}>{base[1]}</td>
                     ))}
                   </tr>
                 ))
               : null}
           </tbody>
-          <TextField
-            outlined
-            label="Pagination"
-            pattern="[0-9]+"
-            placeholder="10"
-            max={maxPokemon.current}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              changeTableQty(+e.target.value)
-            }
-          />
         </table>
+        <div>
+          <label>Pagination</label>
+          <input type="text" id="paginationInput" placeholder="10" />
+          <input
+            type="button"
+            value="Submit"
+            onClick={() => setPages(pokemon)}
+          />
+        </div>
       </React.Suspense>
     </div>
   )
